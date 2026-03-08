@@ -1,3 +1,4 @@
+import LZString from 'lz-string';
 import type { Run } from '../types/Run';
 
 const STORAGE_KEY = 'tower_runs';
@@ -153,30 +154,28 @@ export function exportRunsToJson(): string {
   return JSON.stringify(loadRuns(), null, 2);
 }
 
-/** Encode UTF-8 string to base64 (shareable code). */
-function toBase64(str: string): string {
-  return btoa(String.fromCharCode(...new TextEncoder().encode(str)));
-}
-
-/** Decode base64 back to UTF-8 string. */
+/** Decode base64 back to UTF-8 string (for legacy uncompressed share codes). */
 function fromBase64(code: string): string {
   return new TextDecoder().decode(Uint8Array.from(atob(code), (c) => c.charCodeAt(0)));
 }
 
-/** Export all runs as a shareable base64 code (copy/paste, no file). */
+/** Export all runs as a shareable code (compressed + base64 for shorter codes). */
 export function exportRunsToShareCode(): string {
-  return toBase64(JSON.stringify(loadRuns()));
+  const json = JSON.stringify(loadRuns());
+  return LZString.compressToBase64(json);
 }
 
 /**
- * Import runs from a share code (base64-encoded JSON).
+ * Import runs from a share code (compressed or legacy plain base64 JSON).
  * Replaces all existing runs. Returns the number of runs imported.
  */
 export function importRunsFromShareCode(shareCode: string): number {
   const trimmed = shareCode.trim();
   if (!trimmed) throw new Error('Paste a share code to import');
   try {
-    const json = fromBase64(trimmed);
+    const json =
+      LZString.decompressFromBase64(trimmed) ??
+      fromBase64(trimmed);
     return importRunsFromJson(json);
   } catch (e) {
     if (e instanceof Error && e.message === 'Invalid JSON') {
