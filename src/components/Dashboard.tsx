@@ -149,8 +149,8 @@ export function Dashboard() {
         <div className="rounded-lg border border-gray-700 bg-[#111827]/50 p-8 text-center">
           <p className="text-gray-400 mb-2">No runs yet.</p>
           <p className="text-gray-500 text-sm">
-            Add runs from the <strong className="text-accent-teal">Add run</strong> page to see
-            dashboard stats and charts.
+            Add runs from the <strong className="text-accent-teal">Add run</strong> page (paste a Battle Report),
+            or <strong className="text-accent-teal">Import JSON</strong> on the Runs page if you have a backup.
           </p>
         </div>
       </div>
