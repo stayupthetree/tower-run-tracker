@@ -1,5 +1,5 @@
 import { useMemo, useState, useCallback, useRef } from 'react';
-import { loadRuns, exportRunsToJson, importRunsFromJson, deleteRun } from '../lib/storage';
+import { loadRuns, exportRunsToJson, importRunsFromJson, exportRunsToShareCode, importRunsFromShareCode, deleteRun } from '../lib/storage';
 import { useRunsRefresh } from '../contexts/RunsContext';
 import type { Run } from '../types/Run';
 import { formatNumber, formatTime, formatDate, formatInteger } from '../lib/formatters';
@@ -64,7 +64,11 @@ export function RunList() {
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [refresh, setRefresh] = useState(0);
   const [importError, setImportError] = useState<string | null>(null);
+  const [shareCodeExport, setShareCodeExport] = useState<string | null>(null);
+  const [shareCodeImport, setShareCodeImport] = useState('');
+  const [showImportCode, setShowImportCode] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const exportCodeRef = useRef<HTMLTextAreaElement>(null);
 
   const handleExport = useCallback(() => {
     const json = exportRunsToJson();
@@ -98,6 +102,35 @@ export function RunList() {
     },
     [refreshRuns]
   );
+
+  const handleExportCode = useCallback(() => {
+    setShareCodeExport(exportRunsToShareCode());
+    setShareCodeImport('');
+    setShowImportCode(false);
+  }, []);
+
+  const handleCopyExportCode = useCallback(async () => {
+    if (!shareCodeExport) return;
+    try {
+      await navigator.clipboard.writeText(shareCodeExport);
+    } catch {
+      exportCodeRef.current?.select();
+      document.execCommand('copy');
+    }
+  }, [shareCodeExport]);
+
+  const handleImportFromCode = useCallback(() => {
+    setImportError(null);
+    try {
+      importRunsFromShareCode(shareCodeImport);
+      refreshRuns();
+      setRefresh((r) => r + 1);
+      setShareCodeImport('');
+      setShowImportCode(false);
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'Invalid share code');
+    }
+  }, [shareCodeImport, refreshRuns]);
 
   const handleDelete = useCallback((run: Run) => {
     const date = run.battleDate ? formatDate(run.battleDate) : formatDate(run.savedAt);
@@ -145,6 +178,20 @@ export function RunList() {
             aria-label="Import runs from JSON file"
           />
         </label>
+        <button
+          type="button"
+          onClick={handleExportCode}
+          className="px-3 py-2 rounded-lg border border-gray-600 text-gray-300 text-sm hover:bg-gray-800 hover:border-accent-teal/50 transition"
+        >
+          Export as code
+        </button>
+        <button
+          type="button"
+          onClick={() => { setShowImportCode(!showImportCode); setShareCodeExport(null); setImportError(null); }}
+          className="px-3 py-2 rounded-lg border border-gray-600 text-gray-300 text-sm hover:bg-gray-800 hover:border-accent-teal/50 transition"
+        >
+          Import from code
+        </button>
         {importError && (
           <span className="text-amber-400 text-sm" role="alert">
             {importError}
@@ -152,12 +199,72 @@ export function RunList() {
         )}
       </div>
       <p className="text-gray-500 text-sm">
-        Data is stored only in this browser. Use <strong>Export JSON</strong> to save a backup, then
-        <strong> Import JSON</strong> on another device or browser to restore your runs.
+        Data is stored only in this browser. <strong>Export JSON</strong> or <strong>Export as code</strong> to backup;
+        <strong> Import JSON</strong> or <strong>Import from code</strong> on another device to restore.
       </p>
 
+      {shareCodeExport && (
+        <div className="rounded-lg border border-accent-teal/30 bg-[#111827]/80 p-4 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-accent-teal text-sm font-medium">Share code — copy and paste to share or restore</span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleCopyExportCode}
+                className="px-2 py-1 rounded border border-accent-teal/50 text-accent-teal text-sm hover:bg-accent-teal/10"
+              >
+                Copy
+              </button>
+              <button
+                type="button"
+                onClick={() => setShareCodeExport(null)}
+                className="px-2 py-1 rounded border border-gray-600 text-gray-400 text-sm hover:bg-gray-800"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+          <textarea
+            ref={exportCodeRef}
+            readOnly
+            value={shareCodeExport}
+            className="w-full h-24 px-3 py-2 rounded bg-[#0a0d14] border border-gray-700 text-gray-300 font-mono text-xs"
+            aria-label="Share code"
+          />
+        </div>
+      )}
+
+      {showImportCode && (
+        <div className="rounded-lg border border-gray-700 bg-[#111827]/80 p-4 space-y-2">
+          <span className="text-gray-400 text-sm">Paste a share code to replace your runs with the imported data</span>
+          <textarea
+            value={shareCodeImport}
+            onChange={(e) => setShareCodeImport(e.target.value)}
+            placeholder="Paste share code here…"
+            className="w-full h-24 px-3 py-2 rounded bg-[#0a0d14] border border-gray-700 text-gray-300 font-mono text-xs placeholder-gray-500"
+            aria-label="Paste share code"
+          />
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={handleImportFromCode}
+              className="px-3 py-2 rounded-lg border border-accent-teal/50 text-accent-teal text-sm hover:bg-accent-teal/10"
+            >
+              Import from code
+            </button>
+            <button
+              type="button"
+              onClick={() => { setShowImportCode(false); setShareCodeImport(''); setImportError(null); }}
+              className="px-3 py-2 rounded border border-gray-600 text-gray-400 text-sm hover:bg-gray-800"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
       {runs.length === 0 ? (
-        <p className="text-gray-400">No runs yet. Add runs from Add run, or import a backup file above.</p>
+        <p className="text-gray-400">No runs yet. Add runs from Add run, or import a JSON file or paste a share code above.</p>
       ) : (
     <div className="overflow-x-auto">
       <table className="w-full border-collapse text-sm">
