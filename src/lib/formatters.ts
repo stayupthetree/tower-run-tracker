@@ -44,3 +44,21 @@ export function formatDate(iso: string): string {
     return iso;
   }
 }
+
+/** Date and time for battle date (e.g. "Mar 08, 2026 16:53"). */
+export function formatDateTime(iso: string): string {
+  try {
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    return d.toLocaleString(undefined, {
+      month: 'short',
+      day: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+  } catch {
+    return iso;
+  }
+}

@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { loadRuns, exportRunsToJson, importRunsFromJson, exportRunsToShareCode, importRunsFromShareCode, deleteRun } from '../lib/storage';
 import { useRunsRefresh } from '../contexts/RunsContext';
 import type { Run } from '../types/Run';
-import { formatNumber, formatTime, formatDate, formatInteger } from '../lib/formatters';
+import { formatNumber, formatTime, formatDate, formatInteger, formatDateTime } from '../lib/formatters';
 
 type SortKey =
-  | 'savedAt'
+  | 'battleDate'
   | 'tier'
   | 'wave'
   | 'killedBy'
@@ -21,8 +21,11 @@ type SortDir = 'asc' | 'desc';
 function compareRuns(a: Run, b: Run, key: SortKey, dir: SortDir): number {
   const mult = dir === 'asc' ? 1 : -1;
   switch (key) {
-    case 'savedAt':
-      return mult * (new Date(a.savedAt).getTime() - new Date(b.savedAt).getTime());
+    case 'battleDate':
+      return mult * (
+        new Date(a.battleDate || a.savedAt).getTime() -
+        new Date(b.battleDate || b.savedAt).getTime()
+      );
     case 'tier':
       return mult * (a.tier - b.tier);
     case 'wave':
@@ -47,7 +50,7 @@ function compareRuns(a: Run, b: Run, key: SortKey, dir: SortDir): number {
 }
 
 const COLUMNS: { key: SortKey; label: string; align?: 'right' }[] = [
-  { key: 'savedAt', label: 'Date' },
+  { key: 'battleDate', label: 'Date' },
   { key: 'tier', label: 'Tier' },
   { key: 'wave', label: 'Wave' },
   { key: 'killedBy', label: 'Killed by' },
@@ -62,7 +65,7 @@ const COLUMNS: { key: SortKey; label: string; align?: 'right' }[] = [
 export function RunList() {
   const navigate = useNavigate();
   const refreshRuns = useRunsRefresh();
-  const [sortKey, setSortKey] = useState<SortKey>('savedAt');
+  const [sortKey, setSortKey] = useState<SortKey>('battleDate');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [refresh, setRefresh] = useState(0);
   const [importError, setImportError] = useState<string | null>(null);
@@ -309,7 +312,7 @@ export function RunList() {
               className="border-b border-gray-800 hover:bg-gray-800/50 transition cursor-pointer"
             >
               <td className="py-2 pr-4 font-mono text-gray-300 whitespace-nowrap">
-                {run.battleDate ? formatDate(run.battleDate) : formatDate(run.savedAt)}
+                {formatDateTime(run.battleDate || run.savedAt)}
               </td>
               <td className="py-2 pr-4 font-mono">{run.tier}</td>
               <td className="py-2 pr-4 font-mono">{formatInteger(run.wave)}</td>
