@@ -8,7 +8,7 @@ const STR = '';
 /** Build a full Run from a partial (e.g. from parseReport) with defaults and id/savedAt. */
 export function createRunFromPartial(
   partial: Partial<Run>,
-  options?: { notes?: string }
+  options?: { notes?: string; rawReport?: string }
 ): Run {
   const id = partial.id ?? crypto.randomUUID();
   const savedAt = partial.savedAt ?? new Date().toISOString();
@@ -107,6 +107,7 @@ export function createRunFromPartial(
     cellsPerWave: partial.cellsPerWave ?? NUM,
     rerollShardsPerHour: partial.rerollShardsPerHour ?? NUM,
     notes: options?.notes ?? partial.notes,
+    rawReport: options?.rawReport ?? partial.rawReport,
   };
 }
 

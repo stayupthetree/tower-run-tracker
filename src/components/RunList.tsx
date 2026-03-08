@@ -1,4 +1,5 @@
 import { useMemo, useState, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { loadRuns, exportRunsToJson, importRunsFromJson, exportRunsToShareCode, importRunsFromShareCode, deleteRun } from '../lib/storage';
 import { useRunsRefresh } from '../contexts/RunsContext';
 import type { Run } from '../types/Run';
@@ -59,6 +60,7 @@ const COLUMNS: { key: SortKey; label: string; align?: 'right' }[] = [
 ];
 
 export function RunList() {
+  const navigate = useNavigate();
   const refreshRuns = useRunsRefresh();
   const [sortKey, setSortKey] = useState<SortKey>('savedAt');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
@@ -300,7 +302,11 @@ export function RunList() {
           {runs.map((run) => (
             <tr
               key={run.id}
-              className="border-b border-gray-800 hover:bg-gray-800/50 transition"
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate(`/runs/${run.id}`)}
+              onKeyDown={(e) => e.key === 'Enter' && navigate(`/runs/${run.id}`)}
+              className="border-b border-gray-800 hover:bg-gray-800/50 transition cursor-pointer"
             >
               <td className="py-2 pr-4 font-mono text-gray-300 whitespace-nowrap">
                 {run.battleDate ? formatDate(run.battleDate) : formatDate(run.savedAt)}
@@ -317,7 +323,7 @@ export function RunList() {
               <td className="py-2 pl-4 text-gray-500 max-w-[8rem] truncate" title={run.notes}>
                 {run.notes || '—'}
               </td>
-              <td className="py-2 pl-2">
+              <td className="py-2 pl-2" onClick={(e) => e.stopPropagation()}>
                 <button
                   type="button"
                   onClick={() => handleDelete(run)}

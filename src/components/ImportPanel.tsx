@@ -22,7 +22,7 @@ export function ImportPanel() {
 
   const handleSave = useCallback(() => {
     if (!parsed) return;
-    const full = createRunFromPartial(parsed, { notes: notes.trim() || undefined });
+    const full = createRunFromPartial(parsed, { notes: notes.trim() || undefined, rawReport: rawText || undefined });
     addRun(full);
     refreshRuns();
     setRawText('');

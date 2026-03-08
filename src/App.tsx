@@ -3,6 +3,7 @@ import { RunsProvider } from './contexts/RunsContext'
 import { Header } from './components/Header'
 import { ImportPanel } from './components/ImportPanel'
 import { RunList } from './components/RunList'
+import { RunDetail } from './components/RunDetail'
 import { Dashboard } from './components/Dashboard'
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/import" element={<ImportPanel />} />
             <Route path="/runs" element={<RunList />} />
+            <Route path="/runs/:id" element={<RunDetail />} />
           </Routes>
         </main>
       </div>

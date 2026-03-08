@@ -116,4 +116,7 @@ export interface Run {
   rerollShardsPerHour: number;
 
   notes?: string;
+
+  /** Original pasted Battle Report text (for detail view). */
+  rawReport?: string;
 }
