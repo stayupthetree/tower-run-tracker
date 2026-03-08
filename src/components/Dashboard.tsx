@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import {
   LineChart,
   Line,
@@ -149,8 +150,8 @@ export function Dashboard() {
         <div className="rounded-lg border border-gray-700 bg-[#111827]/50 p-8 text-center">
           <p className="text-gray-400 mb-2">No runs yet.</p>
           <p className="text-gray-500 text-sm">
-            Add runs from the <strong className="text-accent-teal">Add run</strong> page (paste a Battle Report),
-            or <strong className="text-accent-teal">Import JSON</strong> on the Runs page if you have a backup.
+            Add runs from the <Link to="/import" className="text-accent-teal font-semibold hover:underline">Add run</Link> page (paste a Battle Report),
+            or <Link to="/runs" className="text-accent-teal font-semibold hover:underline">Import JSON on the Runs page</Link> if you have a backup.
           </p>
         </div>
       </div>
