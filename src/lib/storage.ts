@@ -186,6 +186,141 @@ export function importRunsFromShareCode(shareCode: string): number {
 }
 
 /**
+ * Export runs as CSV for external tools.
+ * Required columns: Tier, Wave, Coins Earned, Cells Earned, Duration (real time, seconds).
+ * Includes all other fields as additional columns.
+ */
+export function exportRunsToCsv(): string {
+  const runs = loadRuns();
+  if (!runs.length) return '';
+
+  type Col = { header: string; get: (r: Run) => string | number | undefined | null };
+  const cols: Col[] = [
+    // Required
+    { header: 'Tier', get: (r) => r.tier },
+    { header: 'Wave', get: (r) => r.wave },
+    { header: 'Coins Earned', get: (r) => r.coinsEarned },
+    { header: 'Cells Earned', get: (r) => r.cellsEarned },
+    { header: 'Duration', get: (r) => r.realTimeSec }, // seconds
+    // Overview
+    { header: 'Battle Date', get: (r) => r.battleDate },
+    { header: 'Game Time Seconds', get: (r) => r.gameTimeSec },
+    { header: 'Real Time Seconds', get: (r) => r.realTimeSec },
+    { header: 'Killed By', get: (r) => r.killedBy },
+    // Economy
+    { header: 'Coins Per Hour', get: (r) => r.coinsPerHour },
+    { header: 'Cash Earned', get: (r) => r.cashEarned },
+    { header: 'Interest Earned', get: (r) => r.interestEarned },
+    { header: 'Gem Blocks Tapped', get: (r) => r.gemBlocksTapped },
+    { header: 'Reroll Shards Earned', get: (r) => r.rerollShardsEarned },
+    // Combat
+    { header: 'Damage Dealt', get: (r) => r.damageDealt },
+    { header: 'Damage Taken', get: (r) => r.damageTaken },
+    { header: 'Damage Taken Wall', get: (r) => r.damageTakenWall },
+    { header: 'Damage Taken While Berserked', get: (r) => r.damageTakenWhileBerserked },
+    { header: 'Damage Gain From Berserk', get: (r) => r.damageGainFromBerserk },
+    { header: 'Death Defy', get: (r) => r.deathDefy },
+    { header: 'Lifesteal', get: (r) => r.lifesteal },
+    { header: 'Projectiles Damage', get: (r) => r.projectilesDamage },
+    { header: 'Projectiles Count', get: (r) => r.projectilesCount },
+    { header: 'Thorn Damage', get: (r) => r.thornDamage },
+    { header: 'Orb Damage', get: (r) => r.orbDamage },
+    { header: 'Enemies Hit By Orbs', get: (r) => r.enemiesHitByOrbs },
+    { header: 'Land Mine Damage', get: (r) => r.landMineDamage },
+    { header: 'Land Mines Spawned', get: (r) => r.landMinesSpawned },
+    { header: 'Rend Armor Damage', get: (r) => r.rendArmorDamage },
+    { header: 'Death Ray Damage', get: (r) => r.deathRayDamage },
+    { header: 'Smart Missile Damage', get: (r) => r.smartMissileDamage },
+    { header: 'Inner Land Mine Damage', get: (r) => r.innerLandMineDamage },
+    { header: 'Chain Lightning Damage', get: (r) => r.chainLightningDamage },
+    { header: 'Death Wave Damage', get: (r) => r.deathWaveDamage },
+    { header: 'Tagged By Deathwave', get: (r) => r.taggedByDeathwave },
+    { header: 'Swamp Damage', get: (r) => r.swampDamage },
+    { header: 'Black Hole Damage', get: (r) => r.blackHoleDamage },
+    { header: 'Electrons Damage', get: (r) => r.electronsDamage },
+    // Utility
+    { header: 'Waves Skipped', get: (r) => r.wavesSkipped },
+    { header: 'Recovery Packages', get: (r) => r.recoveryPackages },
+    { header: 'Free Attack Upgrade', get: (r) => r.freeAttackUpgrade },
+    { header: 'Free Defense Upgrade', get: (r) => r.freeDefenseUpgrade },
+    { header: 'Free Utility Upgrade', get: (r) => r.freeUtilityUpgrade },
+    { header: 'HP From Death Wave', get: (r) => r.hpFromDeathWave },
+    { header: 'Coins From Death Wave', get: (r) => r.coinsFromDeathWave },
+    { header: 'Cash From Golden Tower', get: (r) => r.cashFromGoldenTower },
+    { header: 'Coins From Golden Tower', get: (r) => r.coinsFromGoldenTower },
+    { header: 'Coins From Black Hole', get: (r) => r.coinsFromBlackHole },
+    { header: 'Coins From Spotlight', get: (r) => r.coinsFromSpotlight },
+    { header: 'Coins From Orb', get: (r) => r.coinsFromOrb },
+    { header: 'Coins From Coin Upgrade', get: (r) => r.coinsFromCoinUpgrade },
+    { header: 'Coins From Coin Bonuses', get: (r) => r.coinsFromCoinBonuses },
+    // Enemies
+    { header: 'Total Enemies', get: (r) => r.totalEnemies },
+    { header: 'Basic Enemies', get: (r) => r.basicEnemies },
+    { header: 'Fast Enemies', get: (r) => r.fastEnemies },
+    { header: 'Tank Enemies', get: (r) => r.tankEnemies },
+    { header: 'Ranged Enemies', get: (r) => r.rangedEnemies },
+    { header: 'Boss Enemies', get: (r) => r.bossEnemies },
+    { header: 'Protector Enemies', get: (r) => r.protectorEnemies },
+    { header: 'Total Elites', get: (r) => r.totalElites },
+    { header: 'Vampires', get: (r) => r.vampires },
+    { header: 'Rays', get: (r) => r.rays },
+    { header: 'Scatters', get: (r) => r.scatters },
+    { header: 'Saboteur', get: (r) => r.saboteur },
+    { header: 'Commander', get: (r) => r.commander },
+    { header: 'Overcharge', get: (r) => r.overcharge },
+    { header: 'Destroyed By Orbs', get: (r) => r.destroyedByOrbs },
+    { header: 'Destroyed By Thorns', get: (r) => r.destroyedByThorns },
+    { header: 'Destroyed By Death Ray', get: (r) => r.destroyedByDeathRay },
+    { header: 'Destroyed By Land Mine', get: (r) => r.destroyedByLandMine },
+    { header: 'Destroyed In Spotlight', get: (r) => r.destroyedInSpotlight },
+    // Bots
+    { header: 'Flame Bot Damage', get: (r) => r.flameBotDamage },
+    { header: 'Thunder Bot Stuns', get: (r) => r.thunderBotStuns },
+    { header: 'Golden Bot Coins Earned', get: (r) => r.goldenBotCoinsEarned },
+    { header: 'Destroyed In Golden Bot', get: (r) => r.destroyedInGoldenBot },
+    // Guardian
+    { header: 'Guardian Damage', get: (r) => r.guardianDamage },
+    { header: 'Summoned Enemies', get: (r) => r.summonedEnemies },
+    { header: 'Guardian Coins Stolen', get: (r) => r.guardianCoinsStolen },
+    { header: 'Coins Fetched', get: (r) => r.coinsFetched },
+    // Rewards
+    { header: 'Gems', get: (r) => r.gems },
+    { header: 'Medals', get: (r) => r.medals },
+    { header: 'Reroll Shards (Guardian)', get: (r) => r.rerollShards },
+    { header: 'Cannon Shards', get: (r) => r.cannonShards },
+    { header: 'Armor Shards', get: (r) => r.armorShards },
+    { header: 'Generator Shards', get: (r) => r.generatorShards },
+    { header: 'Core Shards', get: (r) => r.coreShards },
+    { header: 'Common Modules', get: (r) => r.commonModules },
+    { header: 'Rare Modules', get: (r) => r.rareModules },
+    // Derived
+    { header: 'Coins Per Wave', get: (r) => r.coinsPerWave },
+    { header: 'Cells Per Hour', get: (r) => r.cellsPerHour },
+    { header: 'Cells Per Wave', get: (r) => r.cellsPerWave },
+    { header: 'Reroll Shards Per Hour', get: (r) => r.rerollShardsPerHour },
+    // Meta
+    { header: 'Saved At', get: (r) => r.savedAt },
+    { header: 'Notes', get: (r) => r.notes ?? '' },
+    { header: 'Raw Report', get: (r) => r.rawReport ?? '' },
+  ];
+
+  const escape = (value: string): string =>
+    `"${value.replace(/"/g, '""')}"`;
+
+  const headerRow = cols.map((c) => escape(c.header)).join(',');
+  const rows = runs.map((run) => {
+    const values = cols.map((c) => {
+      const v = c.get(run);
+      if (v === undefined || v === null) return '""';
+      return escape(String(v));
+    });
+    return values.join(',');
+  });
+
+  return [headerRow, ...rows].join('\r\n');
+}
+
+/**
  * Import runs from a JSON string (e.g. from a backup file).
  * Replaces all existing runs. Returns the number of runs imported.
  */

@@ -143,7 +143,7 @@ export function ImportPanel() {
               disabled={!canSave}
               className="px-4 py-2 bg-accent-amber/20 text-accent-amber rounded-lg border border-accent-amber/50 hover:bg-accent-amber/30 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition"
             >
-              Parse & Save
+              Save run
             </button>
             {!canSave && parsed && (
               <span className="text-gray-500 text-sm self-center">

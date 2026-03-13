@@ -1,6 +1,6 @@
 import { useMemo, useState, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { loadRuns, exportRunsToJson, importRunsFromJson, exportRunsToShareCode, importRunsFromShareCode, deleteRun } from '../lib/storage';
+import { loadRuns, exportRunsToJson, importRunsFromJson, exportRunsToShareCode, importRunsFromShareCode, exportRunsToCsv, deleteRun } from '../lib/storage';
 import { useRunsRefresh } from '../contexts/RunsContext';
 import type { Run } from '../types/Run';
 import { formatNumber, formatTime, formatDate, formatInteger, formatDateTime } from '../lib/formatters';
@@ -82,6 +82,18 @@ export function RunList() {
     const a = document.createElement('a');
     a.href = url;
     a.download = `tower-runs-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, []);
+
+  const handleExportCsv = useCallback(() => {
+    const csv = exportRunsToCsv();
+    if (!csv) return;
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tower-runs-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }, []);
@@ -171,6 +183,13 @@ export function RunList() {
           className="px-3 py-2 rounded-lg border border-gray-600 text-gray-300 text-sm hover:bg-gray-800 hover:border-accent-teal/50 transition"
         >
           Export JSON
+        </button>
+        <button
+          type="button"
+          onClick={handleExportCsv}
+          className="px-3 py-2 rounded-lg border border-gray-600 text-gray-300 text-sm hover:bg-gray-800 hover:border-accent-teal/50 transition"
+        >
+          Export CSV
         </button>
         <label className="px-3 py-2 rounded-lg border border-gray-600 text-gray-300 text-sm hover:bg-gray-800 hover:border-accent-teal/50 transition cursor-pointer">
           Import JSON
