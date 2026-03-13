@@ -205,7 +205,9 @@ export function exportRunsToCsv(): string {
     // Overview
     { header: 'Battle Date', get: (r) => r.battleDate },
     { header: 'Game Time Seconds', get: (r) => r.gameTimeSec },
-    { header: 'Real Time Seconds', get: (r) => r.realTimeSec },
+    // Use a slightly different label so external tools don't try to map both
+    // Game Time and Real Time to the same \"Game Time Seconds\" field.
+    { header: 'Real Time (Seconds)', get: (r) => r.realTimeSec },
     { header: 'Killed By', get: (r) => r.killedBy },
     // Economy
     { header: 'Coins Per Hour', get: (r) => r.coinsPerHour },
